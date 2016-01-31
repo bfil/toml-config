@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["ConfigFactory","Implements helper functions for loading .toml files into a structure"]]});
