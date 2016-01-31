@@ -1,0 +1,17 @@
+[package]
+name = "toml-config"
+version = "0.1.0"
+authors = ["Bruno Filippone <bruno.filippone@b-fil.com>"]
+description = "Loads and decodes TOML files into structures"
+keywords = ["config", "toml", "decoder"]
+repository = "https://github.com/bfil/toml-config"
+documentation = "https://bfil.github.io/toml-config"
+license = "MIT"
+readme = "README.md"
+
+[dependencies]
+rustc-serialize = "0.3"
+toml = "0.1"
+
+[dev-dependencies]
+tempfile = "~1.1.1"
