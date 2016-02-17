@@ -113,7 +113,9 @@ impl ConfigFactory {
                         println!("Wrong type for config: {}. Expected: {}, found: {}, using default value..",
                             k, default_value.type_str(), v.type_str());
                     },
-                None => println!("Ignoring unexpected config: {}", k)
+                None => {
+                    merged.insert(k, v);
+                }
             }
         }
         merged
@@ -140,13 +142,15 @@ mod tests {
 
     #[derive(RustcEncodable, RustcDecodable)]
     pub struct Config  {
-        pub nested: NestedConfig
+        pub nested: NestedConfig,
+        pub optional: Option<String>
     }
 
     impl Default for Config {
         fn default() -> Config {
             Config {
-                nested: NestedConfig::default()
+                nested: NestedConfig::default(),
+                optional: None
             }
         }
     }
@@ -169,6 +173,7 @@ mod tests {
     #[test]
     fn it_should_parse_and_decode_a_valid_toml_file() {
         let toml_file = tempfile!(r#"
+            optional = "override"
             [nested]
             value = "test"
             values = [1, 2, 3]
@@ -176,6 +181,7 @@ mod tests {
         let config: Config = ConfigFactory::load(toml_file.path());
         assert_eq!(config.nested.value, "test");
         assert_eq!(config.nested.values, vec![1, 2, 3]);
+        assert_eq!(config.optional, Some("override".to_owned()));
     }
 
     #[test]
