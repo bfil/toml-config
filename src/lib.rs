@@ -1,19 +1,53 @@
-extern crate rustc_serialize;
+#![cfg_attr(feature = "serde-serialization", feature(custom_derive, plugin))]
+#![cfg_attr(feature = "serde-serialization", plugin(serde_macros))]
+
+//! # Configuring your dependency
+//! `toml-config` can be configured to use `rustc_serialize` or `serde`
+//!
+//! ### Using `toml-config` with `rustc_serialize`
+//! By default `toml-config` uses `rustc_serialize`, so just add the dependency in Cargo.toml normally:
+//!
+//! ```toml
+//! [dependencies]
+//! toml-config = "0.2"
+//! ```
+//! ### Using `toml-config` with `serde`
+//! To use toml-config with `serde`, opt out from the default features and enable the `serde-serialization`
+//! feature:
+//!
+//! ```toml
+//! [dependencies.toml-config]
+//! version = "0.2"
+//! default-features = false
+//! features = ["serde-serialization"]
+//! ```
+
+#[cfg(feature = "rustc-serialize")] extern crate rustc_serialize;
+#[cfg(feature = "serde-serialization")] extern crate serde;
+
 extern crate toml;
 
-use rustc_serialize::{Encodable, Decodable};
+#[cfg(feature = "rustc-serialize")] use rustc_serialize::{Encodable, Decodable};
+#[cfg(feature = "serde-serialization")] use serde::{Serialize, Deserialize};
 
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 
-/// Implements helper functions for loading .toml files into a structure
+/// Implements helper functions for loading TOML files into a structure
 ///
 /// # Examples
+/// To load a file into a Config struct, use `ConfigFactory`.
+///
+/// Either `rustc_serialize` or `serde` can be used for serialization.
+///
+/// ### Example using rustc_serialize
 /// ```no_run
+/// # #[cfg(feature = "rustc-serialize")]
 /// extern crate rustc_serialize;
 /// extern crate toml_config;
 ///
+/// # #[cfg(feature = "rustc-serialize")]
 /// # fn main() {
 /// use rustc_serialize::{Encodable, Decodable};
 /// use std::path::Path;
@@ -49,29 +83,111 @@ use std::path::Path;
 /// }
 ///
 /// /* config.toml:
-/// [nested]
-/// value = "test"
-/// values = [1, 2, 3]
-/// */
+///  * [nested]
+///  * value = "test"
+///  * values = [1, 2, 3]
+///  */
 ///
 /// let config: Config = ConfigFactory::load(Path::new("config.toml"));
 /// assert_eq!(config.nested.value, "test");
 /// assert_eq!(config.nested.values, vec![1, 2, 3]);
 /// # }
+/// # #[cfg(feature = "serde-serialization")] fn main() { }
+/// ```
+/// ## Example using serde
+/// ```no_run
+/// # #![cfg_attr(feature = "serde-serialization", feature(custom_derive, plugin))]
+/// # #![cfg_attr(feature = "serde-serialization", plugin(serde_macros))]
+/// # #[cfg(feature = "serde-serialization")]
+/// extern crate serde;
+/// extern crate toml_config;
+///
+/// # #[cfg(feature = "serde-serialization")]
+/// # fn main() {
+/// use serde::{Serialize, Deserialize};
+/// use std::path::Path;
+/// use toml_config::ConfigFactory;
+///
+/// #[derive(Serialize, Deserialize)]
+/// struct Config  {
+///     nested: NestedConfig
+/// }
+///
+/// // Defaults will be used for missing/invalid configurations in the TOML config file
+/// impl Default for Config {
+///     fn default() -> Config {
+///         Config {
+///             nested: NestedConfig::default()
+///         }
+///     }
+/// }
+///
+/// #[derive(Serialize, Deserialize)]
+/// struct NestedConfig  {
+///     value: String,
+///     values: Vec<u16>
+/// }
+///
+/// impl Default for NestedConfig {
+///     fn default() -> NestedConfig {
+///         NestedConfig {
+///             value: "default".to_owned(),
+///             values: vec![0, 0, 0]
+///         }
+///     }
+/// }
+///
+/// /* config.toml:
+///  * [nested]
+///  * value = "test"
+///  * values = [1, 2, 3]
+///  */
+///
+/// let config: Config = ConfigFactory::load(Path::new("config.toml"));
+/// assert_eq!(config.nested.value, "test");
+/// assert_eq!(config.nested.values, vec![1, 2, 3]);
+/// # }
+/// # #[cfg(feature = "rustc-serialize")] fn main() { }
 /// ```
 pub struct ConfigFactory;
 
 impl ConfigFactory {
     /// Loads a TOML file and decodes it into a target structure, using default values
     /// for missing or invalid file configurations
+    #[cfg(feature = "rustc-serialize")]
     pub fn load<T>(path: &Path) -> T where T: Encodable + Decodable + Default {
+        match ConfigFactory::parse_toml_file(path) {
+            Some(toml_table) => {
+                let default_table = toml::encode(&T::default()).as_table().unwrap().clone();
+                let table_with_overrides = ConfigFactory::apply_overrides(default_table, toml_table);
+                toml::decode(toml::Value::Table(table_with_overrides)).unwrap()
+            },
+            None => T::default()
+        }
+    }
+
+    /// Loads a TOML file and decodes it into a target structure, using default values
+    /// for missing or invalid file configurations
+    #[cfg(feature = "serde-serialization")]
+    pub fn load<T>(path: &Path) -> T where T: Serialize + Deserialize + Default {
+        match ConfigFactory::parse_toml_file(path) {
+            Some(toml_table) => {
+                let default_table = toml::encode(&T::default()).as_table().unwrap().clone();
+                let table_with_overrides = ConfigFactory::apply_overrides(default_table, toml_table);
+                toml::decode(toml::Value::Table(table_with_overrides)).unwrap()
+            },
+            None => T::default()
+        }
+    }
+
+    fn parse_toml_file(path: &Path) -> Option<toml::Table> {
         let mut toml_config = String::new();
 
         let mut file = match File::open(path) {
             Ok(file) => file,
             Err(_)  => {
                 println!("Config file not found: {}, using defaults..", path.display());
-                return T::default();
+                return None;
             }
         };
 
@@ -87,12 +203,10 @@ impl ConfigFactory {
                 println!("Parsing of {} failed [{}:{}] - {}", path.display(), line + 1, col + 1, err.desc);
             }
             println!("Unable to parse config file: {}, using defaults..", path.display());
-            return T::default();
+            return None;
         }
 
-        let default_table = toml::encode(&T::default()).as_table().unwrap().clone();
-        let table_with_overrides = ConfigFactory::apply_overrides(default_table, toml_table.unwrap());
-        toml::decode(toml::Value::Table(table_with_overrides)).unwrap()
+        toml_table
     }
 
     fn apply_overrides(defaults: toml::Table, overrides: toml::Table) -> toml::Table {
@@ -140,7 +254,8 @@ mod tests {
         }
     }
 
-    #[derive(RustcEncodable, RustcDecodable)]
+    #[cfg_attr(feature = "rustc-serialize", derive(RustcEncodable, RustcDecodable))]
+    #[cfg_attr(feature = "serde-serialization", derive(Serialize, Deserialize))]
     pub struct Config  {
         pub nested: NestedConfig,
         pub optional: Option<String>
@@ -155,7 +270,8 @@ mod tests {
         }
     }
 
-    #[derive(RustcEncodable, RustcDecodable)]
+    #[cfg_attr(feature = "rustc-serialize", derive(RustcEncodable, RustcDecodable))]
+    #[cfg_attr(feature = "serde-serialization", derive(Serialize, Deserialize))]
     pub struct NestedConfig  {
         pub value: String,
         pub values: Vec<u16>

@@ -1,6 +1,6 @@
 [package]
 name = "toml-config"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Bruno Filippone <bruno.filippone@b-fil.com>"]
 description = "Loads and decodes TOML files into structures"
 keywords = ["config", "toml", "decoder"]
@@ -10,8 +10,14 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-rustc-serialize = "0.3"
-toml = "0.1"
+toml = { version = "0.1", default-features = false }
+rustc-serialize = { optional = true, version = "0.3" }
+serde = { optional = true, version = "0.6" }
+serde_macros = { optional = true, version = "0.6" }
+
+[features]
+default = ["rustc-serialize", "toml/default"]
+serde-serialization = ["serde", "serde_macros", "toml/serde"]
 
 [dev-dependencies]
 tempfile = "~1.1.1"
