@@ -9,6 +9,7 @@
 
     <title>toml_config - Rust</title>
 
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../main.css">
 
     
@@ -45,15 +46,34 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-0' class='srclink' href='../src/toml_config/lib.rs.html#1-236' title='goto source code'>[src]</a></span></h1>
-<h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+        </span><a id='src-0' class='srclink' href='../src/toml_config/lib.rs.html#1-358' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'>
+<h1 id='configuring-your-dependency' class='section-header'><a href='#configuring-your-dependency'>Configuring your dependency</a></h1>
+<p><code>toml-config</code> can be configured to use <code>rustc_serialize</code> or <code>serde</code></p>
+
+<h3 id='using-toml-config-with-rustc_serialize' class='section-header'><a href='#using-toml-config-with-rustc_serialize'>Using <code>toml-config</code> with <code>rustc_serialize</code></a></h3>
+<p>By default <code>toml-config</code> uses <code>rustc_serialize</code>, so just add the dependency in Cargo.toml normally:</p>
+
+<pre><code class="language-toml">[dependencies]
+toml-config = &quot;0.2&quot;
+</code></pre>
+
+<h3 id='using-toml-config-with-serde' class='section-header'><a href='#using-toml-config-with-serde'>Using <code>toml-config</code> with <code>serde</code></a></h3>
+<p>To use toml-config with <code>serde</code>, opt out from the default features and enable the <code>serde-serialization</code>
+feature:</p>
+
+<pre><code class="language-toml">[dependencies.toml-config]
+version = &quot;0.2&quot;
+default-features = false
+features = [&quot;serde-serialization&quot;]
+</code></pre>
+</div><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
 <table>
                     <tr class=' module-item'>
                         <td><a class='struct' href='struct.ConfigFactory.html'
                                title='toml_config::ConfigFactory'>ConfigFactory</a></td>
                         <td class='docblock short'>
-                             <p>Implements helper functions for loading .toml files into a structure</p>
-
+                             <p>Implements helper functions for loading TOML files into a structure</p>
                         </td>
                     </tr>
                 </table></section>
@@ -99,7 +119,7 @@
 
                 <p>
                     Search functions by type signature (e.g.
-                    <code>vec -> usize</code>)
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
                 </p>
             </div>
         </div>
@@ -115,6 +135,6 @@
     <script src="../jquery.js"></script>
     <script src="../main.js"></script>
     
-    <script async src="../search-index.js"></script>
+    <script defer src="../search-index.js"></script>
 </body>
 </html>
