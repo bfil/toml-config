@@ -189,7 +189,6 @@ impl ConfigFactory {
         let mut file = match File::open(path) {
             Ok(file) => file,
             Err(_)  => {
-
                 warn!("Config file not found: {}, using defaults..", path.display());
                 return None;
             }
