@@ -25,10 +25,13 @@
 #[cfg(feature = "rustc-serialize")] extern crate rustc_serialize;
 #[cfg(feature = "serde-serialization")] extern crate serde;
 
+#[macro_use] extern crate log;
+
 extern crate toml;
 
 #[cfg(feature = "rustc-serialize")] use rustc_serialize::{Encodable, Decodable};
 #[cfg(feature = "serde-serialization")] use serde::{Serialize, Deserialize};
+
 
 use std::io::Read;
 use std::fs::File;
@@ -186,7 +189,7 @@ impl ConfigFactory {
         let mut file = match File::open(path) {
             Ok(file) => file,
             Err(_)  => {
-                println!("Config file not found: {}, using defaults..", path.display());
+                warn!("Config file not found: {}, using defaults..", path.display());
                 return None;
             }
         };
@@ -200,9 +203,9 @@ impl ConfigFactory {
         if toml_table.is_none() {
             for err in &parser.errors {
                 let (line, col) = parser.to_linecol(err.lo);
-                println!("Parsing of {} failed [{}:{}] - {}", path.display(), line + 1, col + 1, err.desc);
+                error!("Parsing of {} failed [{}:{}] - {}", path.display(), line + 1, col + 1, err.desc);
             }
-            println!("Unable to parse config file: {}, using defaults..", path.display());
+            error!("Unable to parse config file: {}, using defaults..", path.display());
             return None;
         }
 
@@ -224,7 +227,7 @@ impl ConfigFactory {
                             any => merged.insert(k, any)
                         };
                     } else {
-                        println!("Wrong type for config: {}. Expected: {}, found: {}, using default value..",
+                        warn!("Wrong type for config: {}. Expected: {}, found: {}, using default value..",
                             k, default_value.type_str(), v.type_str());
                     },
                 None => {
