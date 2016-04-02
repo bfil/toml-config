@@ -44,7 +44,7 @@ use std::path::Path;
 ///
 /// Either `rustc_serialize` or `serde` can be used for serialization.
 ///
-/// ### Example using rustc_serialize
+/// ## Example using rustc_serialize
 /// ```no_run
 /// # #[cfg(feature = "rustc-serialize")]
 /// extern crate rustc_serialize;
