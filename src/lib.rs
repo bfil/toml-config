@@ -160,11 +160,7 @@ impl ConfigFactory {
     #[cfg(feature = "rustc-serialize")]
     pub fn load<T>(path: &Path) -> T where T: Encodable + Decodable + Default {
         match ConfigFactory::parse_toml_file(path) {
-            Some(toml_table) => {
-                let default_table = toml::encode(&T::default()).as_table().unwrap().clone();
-                let table_with_overrides = ConfigFactory::apply_overrides(default_table, toml_table);
-                toml::decode(toml::Value::Table(table_with_overrides)).unwrap()
-            },
+            Some(toml_table) => ConfigFactory::decode(toml_table),
             None => T::default()
         }
     }
@@ -174,13 +170,27 @@ impl ConfigFactory {
     #[cfg(feature = "serde-serialization")]
     pub fn load<T>(path: &Path) -> T where T: Serialize + Deserialize + Default {
         match ConfigFactory::parse_toml_file(path) {
-            Some(toml_table) => {
-                let default_table = toml::encode(&T::default()).as_table().unwrap().clone();
-                let table_with_overrides = ConfigFactory::apply_overrides(default_table, toml_table);
-                toml::decode(toml::Value::Table(table_with_overrides)).unwrap()
-            },
+            Some(toml_table) => ConfigFactory::decode(toml_table),
             None => T::default()
         }
+    }
+
+    /// Decodes a TOML table into a target structure, using default values
+    /// for missing or invalid configurations
+    #[cfg(feature = "rustc-serialize")]
+    pub fn decode<T>(toml_table: toml::Table) -> T where T: Encodable + Decodable + Default {
+        let default_table = toml::encode(&T::default()).as_table().unwrap().clone();
+        let table_with_overrides = ConfigFactory::apply_overrides(default_table, toml_table);
+        toml::decode(toml::Value::Table(table_with_overrides)).unwrap()
+    }
+
+    /// Decodes a TOML table into a target structure, using default values
+    /// for missing or invalid configurations
+    #[cfg(feature = "serde-serialization")]
+    pub fn decode<T>(toml_table: toml::Table) -> T where T: Serialize + Deserialize + Default {
+        let default_table = toml::encode(&T::default()).as_table().unwrap().clone();
+        let table_with_overrides = ConfigFactory::apply_overrides(default_table, toml_table);
+        toml::decode(toml::Value::Table(table_with_overrides)).unwrap()
     }
 
     fn parse_toml_file(path: &Path) -> Option<toml::Table> {
