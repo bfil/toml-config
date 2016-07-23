@@ -4,13 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="Source to the Rust file `/Users/bruno.filippone/.cargo/registry/src/github.com-88ac128001ac3a9a/toml-0.1.27/src/decoder/mod.rs`.">
+    <meta name="description" content="Source to the Rust file `/Users/bruno.filippone/.cargo/registry/src/github.com-1ecc6299db9ec823/toml-0.1.30/src/decoder/mod.rs`.">
     <meta name="keywords" content="rust, rustlang, rust-lang">
 
     <title>mod.rs.html -- source</title>
 
     <link rel="stylesheet" type="text/css" href="../../../rustdoc.css">
     <link rel="stylesheet" type="text/css" href="../../../main.css">
+    
 
     
     
@@ -264,6 +265,18 @@
 <span id="221">221</span>
 <span id="222">222</span>
 <span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>error</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
@@ -320,8 +333,12 @@
     <span class='ident'>NilTooLong</span>,
     <span class='doccomment'>/// There was an error with the syntactical structure of the TOML.</span>
     <span class='ident'>SyntaxError</span>,
+    <span class='doccomment'>/// A custom error was generated when decoding.</span>
+    <span class='ident'>CustomError</span>(<span class='ident'>String</span>),
     <span class='doccomment'>/// The end of the TOML input was reached too soon</span>
     <span class='ident'>EndOfStream</span>,
+    <span class='doccomment'>/// Produced by serde ...</span>
+    <span class='ident'>InvalidType</span>(<span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span>),
 }
 
 <span class='doccomment'>/// Decodes a TOML value into a decodable type.</span>
@@ -462,6 +479,12 @@
             <span class='ident'>EndOfStream</span> <span class='op'>=&gt;</span> {
                 <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;end of stream&quot;</span>)
             }
+            <span class='ident'>InvalidType</span>(<span class='ident'>s</span>) <span class='op'>=&gt;</span> {
+                <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;invalid type: {}&quot;</span>, <span class='ident'>s</span>)
+            }
+            <span class='ident'>CustomError</span>(<span class='kw-2'>ref</span> <span class='ident'>s</span>) <span class='op'>=&gt;</span> {
+                <span class='macro'>write</span><span class='macro'>!</span>(<span class='ident'>f</span>, <span class='string'>&quot;custom error: {}&quot;</span>, <span class='ident'>s</span>)
+            }
         });
         <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>field</span> {
             <span class='prelude-val'>Some</span>(<span class='kw-2'>ref</span> <span class='ident'>s</span>) <span class='op'>=&gt;</span> {
@@ -485,6 +508,8 @@
             <span class='ident'>NilTooLong</span> <span class='op'>=&gt;</span> <span class='string'>&quot;nonzero length string representing nil&quot;</span>,
             <span class='ident'>SyntaxError</span> <span class='op'>=&gt;</span> <span class='string'>&quot;syntax error&quot;</span>,
             <span class='ident'>EndOfStream</span> <span class='op'>=&gt;</span> <span class='string'>&quot;end of stream&quot;</span>,
+            <span class='ident'>InvalidType</span>(..) <span class='op'>=&gt;</span> <span class='string'>&quot;invalid type&quot;</span>,
+            <span class='ident'>CustomError</span>(..) <span class='op'>=&gt;</span> <span class='string'>&quot;custom error&quot;</span>,
         }
     }
 }
@@ -512,6 +537,8 @@
                     <dd>Move down in search results</dd>
                     <dt>&#9166;</dt>
                     <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
                 </dl>
             </div>
 
